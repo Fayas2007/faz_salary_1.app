@@ -1,3 +1,27 @@
+/* Typing Effect Styles */
+.typing-text {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a4a54;
+  text-align: center;
+  margin-bottom: 2rem;
+  min-height: 2.5rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+}
+
+.cursor {
+  display: inline-block;
+  margin-left: 2px;
+  animation: blink 0.7s infinite;
+  color: #2E6C7B;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 .landing-page {
   width: 100%;
   height: 100vh;
@@ -11,6 +35,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-direction: column;
 }
 
 .password-container {
@@ -122,6 +147,19 @@
 .submit-button:active {
   transform: translateY(0);
   box-shadow: 0 1px 3px rgba(46, 108, 123, 0.3);
+}
+
+.error-message {
+  color: #e53e3e;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .gradient-section {

@@ -10,10 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.89.0",
     "@types/react-router-dom": "^5.3.3",
     "@types/styled-components": "^5.1.36",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-icons": "^5.5.0",
     "react-router-dom": "^7.11.0",
     "styled-components": "^6.1.19"
   },

@@ -1,0 +1,376 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  FiHome, 
+  FiFolder, 
+  FiUsers, 
+  FiSettings, 
+  FiHelpCircle, 
+  FiMenu, 
+  FiChevronDown, 
+  FiPlus, 
+  FiTrash2, 
+  FiSave,
+  FiEdit2
+} from 'react-icons/fi';
+import './Dashboard.css';
+import './EmployeeSettings.css';
+
+interface Employee {
+  id: string;
+  name: string;
+  employeeId: string;
+  department: 'grading' | 'cutting';
+  salary?: string | number;
+  isEditing?: boolean;
+}
+
+const EmployeeSettings: React.FC = () => {
+  const navigate = useNavigate();
+  const [showDepartmentPopup, setShowDepartmentPopup] = useState(false);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [employees, setEmployees] = useState<Employee[]>(() => {
+    const saved = localStorage.getItem('employees');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [newEmployee, setNewEmployee] = useState<Omit<Employee, 'id'>>({ 
+    name: '', 
+    employeeId: '',
+    department: 'grading' 
+  });
+  
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAddPopup, setShowAddPopup] = useState<{show: boolean; department: 'grading' | 'cutting'}>({show: false, department: 'grading'});
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        setShowDepartmentPopup(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Save employees to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('employees', JSON.stringify(employees));
+  }, [employees]);
+
+  const handleDepartmentSelect = (department: string) => {
+    console.log(`Selected department: ${department}`);
+    setShowDepartmentPopup(false);
+  };
+
+  const handleAddEmployee = () => {
+    if (newEmployee.name.trim() && newEmployee.employeeId.trim()) {
+      const employeeToAdd = {
+        ...newEmployee,
+        id: Date.now().toString(),
+        department: showAddPopup.department
+      };
+      
+      setEmployees([...employees, employeeToAdd]);
+      setNewEmployee({ name: '', employeeId: '', department: showAddPopup.department });
+      setShowAddPopup({...showAddPopup, show: false});
+    }
+  };
+
+  const openAddPopup = (department: 'grading' | 'cutting') => {
+    setNewEmployee({ name: '', employeeId: '', department });
+    setShowAddPopup({show: true, department});
+  };
+
+  const handleDeleteEmployee = (id: string) => {
+    setEmployees(employees.filter(emp => emp.id !== id));
+  };
+
+  const startEditing = (employee: Employee) => {
+    setEditingId(employee.id);
+  };
+
+  const handleUpdateEmployee = (id: string, field: 'name' | 'employeeId', value: string) => {
+    setEmployees(employees.map(emp => 
+      emp.id === id ? { ...emp, [field]: value } : emp
+    ));
+  };
+
+  const saveChanges = () => {
+    setEditingId(null);
+  };
+
+  const filteredEmployees = (department: 'grading' | 'cutting') => {
+    return employees.filter(emp => emp.department === department);
+  };
+
+  return (
+    <div className="dashboard">
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="logo">
+          <FiMenu className="menu-icon" />
+          <h2>Logo</h2>
+        </div>
+        <nav className="nav-menu">
+          <ul>
+            <li onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
+              <FiHome className="icon" />
+              <span>Dashboard</span>
+            </li>
+            <li 
+              className={`nav-item ${showDepartmentPopup ? 'active' : ''}`} 
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDepartmentPopup(!showDepartmentPopup);
+              }}
+            >
+              <FiUsers className="icon" />
+              <span>Daily Work Logs</span>
+              <FiChevronDown className="chevron-icon" />
+              {showDepartmentPopup && (
+                <div className="department-popup" ref={popupRef}>
+                  <div className="popup-arrow"></div>
+                  <div 
+                    className="popup-item" 
+                    onClick={() => handleDepartmentSelect('cutting')}
+                  >
+                    Cutting
+                  </div>
+                  <div 
+                    className="popup-item" 
+                    onClick={() => handleDepartmentSelect('grading')}
+                  >
+                    Grading
+                  </div>
+                </div>
+              )}
+            </li>
+            <li className="active" onClick={() => navigate('/employee-settings')} style={{ cursor: 'pointer' }}>
+              <FiFolder className="icon" />
+              <span>Employee Settings</span>
+            </li>
+            <li>
+              <FiSettings className="icon" />
+              <span>Settings</span>
+            </li>
+            <li className="help">
+              <FiHelpCircle className="icon" />
+              <span>Help</span>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="main-content">
+        <div className="sections-container">
+          {/* Grading Section */}
+          <section className="department-section">
+            <div className="section-header">
+              <h2>Grading Section</h2>
+            </div>
+            <div className="section-content">
+              <div className="add-employee-button-container">
+                <button 
+                  className="add-button"
+                  onClick={() => openAddPopup('grading')}
+                >
+                  <FiPlus /> Add Employee
+                </button>
+              </div>
+              
+              <div className="employee-table-container">
+                <table className="employee-table">
+                  <thead>
+                    <tr>
+                      <th>Actions</th>
+                      <th>Name</th>
+                      <th>Employee ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEmployees('grading').length > 0 ? (
+                      filteredEmployees('grading').map((employee) => (
+                        <tr key={employee.id}>
+                          <td className="actions">
+                            {editingId === employee.id ? (
+                              <button onClick={saveChanges} className="icon-button">
+                                <FiSave />
+                              </button>
+                            ) : (
+                              <button onClick={() => startEditing(employee)} className="icon-button">
+                                <FiEdit2 />
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => handleDeleteEmployee(employee.id)}
+                              className="icon-button delete"
+                            >
+                              <FiTrash2 />
+                            </button>
+                          </td>
+                          <td>
+                            {editingId === employee.id ? (
+                              <input
+                                type="text"
+                                value={employee.name}
+                                onChange={(e) => handleUpdateEmployee(employee.id, 'name', e.target.value)}
+                              />
+                            ) : (
+                              employee.name
+                            )}
+                          </td>
+                          <td>
+                            {editingId === employee.id ? (
+                              <input
+                                type="text"
+                                value={employee.employeeId}
+                                onChange={(e) => handleUpdateEmployee(employee.id, 'employeeId', e.target.value)}
+                              />
+                            ) : (
+                              employee.employeeId
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3} className="no-data">No employees added yet</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          {/* Cutting Section */}
+          <section className="department-section">
+            <div className="section-header">
+              <h2>Cutting Section</h2>
+            </div>
+            <div className="section-content">
+              <div className="add-employee-button-container">
+                <button 
+                  className="add-button"
+                  onClick={() => openAddPopup('cutting')}
+                >
+                  <FiPlus /> Add Employee
+                </button>
+              </div>
+              
+              <div className="employee-table-container">
+                <table className="employee-table">
+                  <thead>
+                    <tr>
+                      <th>Actions</th>
+                      <th>Name</th>
+                      <th>Employee ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEmployees('cutting').length > 0 ? (
+                      filteredEmployees('cutting').map((employee) => (
+                        <tr key={employee.id}>
+                          <td className="actions">
+                            {editingId === employee.id ? (
+                              <button onClick={saveChanges} className="icon-button">
+                                <FiSave />
+                              </button>
+                            ) : (
+                              <button onClick={() => startEditing(employee)} className="icon-button">
+                                <FiEdit2 />
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => handleDeleteEmployee(employee.id)}
+                              className="icon-button delete"
+                            >
+                              <FiTrash2 />
+                            </button>
+                          </td>
+                          <td>
+                            {editingId === employee.id ? (
+                              <input
+                                type="text"
+                                value={employee.name}
+                                onChange={(e) => handleUpdateEmployee(employee.id, 'name', e.target.value)}
+                              />
+                            ) : (
+                              employee.name
+                            )}
+                          </td>
+                          <td>
+                            {editingId === employee.id ? (
+                              <input
+                                type="text"
+                                value={employee.employeeId}
+                                onChange={(e) => handleUpdateEmployee(employee.id, 'employeeId', e.target.value)}
+                              />
+                            ) : (
+                              employee.employeeId
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3} className="no-data">No employees added yet</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      {/* Add Employee Popup */}
+      {showAddPopup.show && (
+        <div className="popup-overlay">
+          <div className="popup-content">
+            <h3>Add New Employee ({showAddPopup.department})</h3>
+            <div className="employee-form">
+              <input
+                type="text"
+                placeholder="Employee Name"
+                value={newEmployee.name}
+                onChange={(e) => setNewEmployee({...newEmployee, name: e.target.value})}
+                autoFocus
+              />
+              <input
+                type="text"
+                placeholder="Employee ID"
+                value={newEmployee.employeeId}
+                onChange={(e) => setNewEmployee({...newEmployee, employeeId: e.target.value})}
+              />
+              <div className="popup-buttons">
+                <button 
+                  className="cancel-button"
+                  onClick={() => setShowAddPopup({...showAddPopup, show: false})}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="add-button"
+                  onClick={handleAddEmployee}
+                  disabled={!newEmployee.name.trim() || !newEmployee.employeeId.trim()}
+                >
+                  <FiPlus /> Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default EmployeeSettings;
